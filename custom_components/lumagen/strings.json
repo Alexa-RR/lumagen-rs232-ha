@@ -1,0 +1,156 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "This processor is already configured",
+      "reconfigure_successful": "Connection settings updated",
+      "wrong_device": "That connection reaches a different Lumagen processor than the one being reconfigured"
+    },
+    "error": {
+      "cannot_connect": "Could not open the connection. Check the serial port, or the bridge's host and port.",
+      "no_response": "The connection opened but the processor did not answer. Make sure it is powered on, then check the RS-232 cable (null modem), that the bridge runs at 9600 8N1, and that RS-232 Delimiters are Off on the Radiance.",
+      "unknown": "Unexpected error"
+    },
+    "step": {
+      "user": {
+        "title": "How is the Lumagen connected?",
+        "menu_options": {
+          "usb": "USB serial adapter on this Home Assistant host",
+          "network": "Network serial bridge (e.g. Raspberry Pi running ser2net)"
+        }
+      },
+      "reconfigure": {
+        "title": "How is the Lumagen connected?",
+        "menu_options": {
+          "usb": "USB serial adapter on this Home Assistant host",
+          "network": "Network serial bridge (e.g. Raspberry Pi running ser2net)"
+        }
+      },
+      "usb": {
+        "title": "USB serial adapter",
+        "data": {
+          "device": "Serial port"
+        },
+        "data_description": {
+          "device": "The USB-to-RS-232 adapter wired to the Radiance with a null-modem cable"
+        }
+      },
+      "network": {
+        "title": "Network serial bridge",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "protocol": "Protocol"
+        },
+        "data_description": {
+          "host": "Hostname or IP address of the bridge (e.g. the Raspberry Pi)",
+          "port": "TCP port the bridge serves the Lumagen's serial port on",
+          "protocol": "Raw TCP needs 9600 8N1 set in the bridge's config. RFC 2217 lets Home Assistant set the port settings itself."
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "input_count": "Number of inputs"
+        },
+        "data_description": {
+          "input_count": "How many inputs to offer in the input selector"
+        }
+      }
+    }
+  },
+  "selector": {
+    "protocol": {
+      "options": {
+        "socket": "Raw TCP (ser2net raw mode)",
+        "rfc2217": "RFC 2217 (ser2net telnet/rfc2217 mode)"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "signal": {
+        "name": "Video signal"
+      },
+      "hdr": {
+        "name": "HDR"
+      }
+    },
+    "select": {
+      "input": {
+        "name": "Input"
+      },
+      "memory": {
+        "name": "Input memory",
+        "state": {
+          "a": "Memory A",
+          "b": "Memory B",
+          "c": "Memory C",
+          "d": "Memory D"
+        }
+      }
+    },
+    "sensor": {
+      "input_status": {
+        "name": "Input status",
+        "state": {
+          "no_source": "No source",
+          "active_video": "Active video",
+          "test_pattern": "Test pattern"
+        }
+      },
+      "source_resolution": {
+        "name": "Source resolution"
+      },
+      "source_frame_rate": {
+        "name": "Source frame rate"
+      },
+      "source_content_aspect": {
+        "name": "Source aspect ratio"
+      },
+      "source_raster_aspect": {
+        "name": "Source raster aspect ratio"
+      },
+      "detected_content_aspect": {
+        "name": "Detected aspect ratio"
+      },
+      "output_resolution": {
+        "name": "Output resolution"
+      },
+      "output_frame_rate": {
+        "name": "Output frame rate"
+      },
+      "output_aspect": {
+        "name": "Output aspect ratio"
+      },
+      "output_colorspace": {
+        "name": "Output colorspace",
+        "state": {
+          "rec601": "Rec. 601",
+          "rec709": "Rec. 709",
+          "rec2020": "Rec. 2020",
+          "rec2100": "Rec. 2100"
+        }
+      },
+      "output_cms": {
+        "name": "Output CMS"
+      },
+      "output_style": {
+        "name": "Output style"
+      },
+      "input_config": {
+        "name": "Input config"
+      },
+      "physical_input": {
+        "name": "Physical input"
+      }
+    },
+    "switch": {
+      "game_mode": {
+        "name": "Game mode"
+      }
+    }
+  }
+}

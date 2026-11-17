@@ -1,0 +1,22 @@
+{
+  "domain": "lumagen",
+  "name": "Lumagen",
+  "codeowners": [
+    "@Alexa-RR"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "usb"
+  ],
+  "documentation": "https://github.com/Alexa-RR/lumagen-rs232-ha",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/Alexa-RR/lumagen-rs232-ha/issues",
+  "loggers": [
+    "custom_components.lumagen.pylumagen"
+  ],
+  "requirements": [
+    "serialx>=1.11.0"
+  ],
+  "version": "0.1.0"
+}
