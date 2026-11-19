@@ -11,59 +11,51 @@ from homeassistant.config_entries import (
     ConfigFlowResult,
     OptionsFlowWithReload,
 )
-from homeassistant.const import CONF_DEVICE, CONF_HOST, CONF_PORT, CONF_PROTOCOL
+from homeassistant.const import CONF_DEVICE
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
-    SelectSelector,
-    SelectSelectorConfig,
-    SelectSelectorMode,
     SerialPortSelector,
-    TextSelector,
 )
 
-from .const import (
-    CONF_CONNECTION_TYPE,
-    CONF_INPUT_COUNT,
-    CONNECTION_NETWORK,
-    CONNECTION_USB,
-    DEFAULT_INPUT_COUNT,
-    DEFAULT_NETWORK_PORT,
-    DOMAIN,
-    LOGGER,
-    PROTOCOL_RFC2217,
-    PROTOCOL_SOCKET,
-    build_url,
-)
+from .const import CONF_INPUT_COUNT, DEFAULT_INPUT_COUNT, DOMAIN, LOGGER
 from .coordinator import LumagenConfigEntry
 from .pylumagen import Identity, LumagenConnectionError, LumagenTimeoutError, async_probe
 from .pylumagen.commands import MAX_INPUTS
 
-USB_SCHEMA = probatio.Schema({probatio.Required(CONF_DEVICE): SerialPortSelector()})
+DATA_SCHEMA = probatio.Schema({probatio.Required(CONF_DEVICE): SerialPortSelector()})
 
-NETWORK_SCHEMA = probatio.Schema(
-    {
-        probatio.Required(CONF_HOST): TextSelector(),
-        probatio.Required(CONF_PORT, default=DEFAULT_NETWORK_PORT): NumberSelector(
-            NumberSelectorConfig(min=1, max=65535, mode=NumberSelectorMode.BOX)
-        ),
-        probatio.Required(CONF_PROTOCOL, default=PROTOCOL_SOCKET): SelectSelector(
-            SelectSelectorConfig(
-                options=[PROTOCOL_SOCKET, PROTOCOL_RFC2217],
-                mode=SelectSelectorMode.LIST,
-                translation_key="protocol",
-            )
-        ),
-    }
-)
+# Outcome of _async_attempt_connect meaning the port opened but no Lumagen
+# answered; this routes the user to the troubleshooting step.
+RESULT_NO_RESPONSE = "no_response"
+
+
+async def _async_attempt_connect(port: str) -> Identity | str:
+    """Probe the processor at ``port``.
+
+    Returns its identity on success, otherwise an outcome key: "cannot_connect"
+    when the port could not be opened, RESULT_NO_RESPONSE when it opened but no
+    Lumagen answered, or "unknown" for an unexpected error.
+    """
+    try:
+        return await async_probe(port)
+    except LumagenTimeoutError:
+        return RESULT_NO_RESPONSE
+    except LumagenConnectionError:
+        return "cannot_connect"
+    except Exception:
+        LOGGER.exception("Unexpected error probing %s", port)
+        return "unknown"
 
 
 class LumagenConfigFlow(ConfigFlow, domain=DOMAIN):
-    """Set up a Lumagen processor over USB serial or a network serial bridge."""
+    """Set up a Lumagen processor on a serial port or a network serial bridge."""
 
     VERSION = 1
+
+    _user_input: dict[str, Any] | None = None
 
     @staticmethod
     @callback
@@ -74,92 +66,71 @@ class LumagenConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @override
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Ask how the processor is connected."""
-        return self.async_show_menu(
-            step_id="user", menu_options=[CONNECTION_USB, CONNECTION_NETWORK]
+        """Ask for the serial port."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            port = user_input[CONF_DEVICE].strip()
+            # A configured port is held open by its entry, so probing it would fail.
+            self._async_abort_entries_match({CONF_DEVICE: port})
+            result = await _async_attempt_connect(port)
+            if isinstance(result, Identity):
+                await self.async_set_unique_id(_unique_id(result))
+                self._abort_if_unique_id_configured(updates={CONF_DEVICE: port})
+                return self.async_create_entry(title=_title(result), data={CONF_DEVICE: port})
+            if result == RESULT_NO_RESPONSE:
+                self._user_input = user_input
+                return await self.async_step_troubleshoot()
+            errors["base"] = result
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=self.add_suggested_values_to_schema(
+                DATA_SCHEMA, user_input or self._user_input or {}
+            ),
+            errors=errors,
         )
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Change how an existing processor is connected."""
-        return self.async_show_menu(
-            step_id="reconfigure", menu_options=[CONNECTION_USB, CONNECTION_NETWORK]
-        )
-
-    async def async_step_usb(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Connect through a serial port on the Home Assistant host."""
+        """Change the serial port of an existing processor."""
+        entry = self._get_reconfigure_entry()
         errors: dict[str, str] = {}
+
         if user_input is not None:
-            data = {CONF_CONNECTION_TYPE: CONNECTION_USB, CONF_DEVICE: user_input[CONF_DEVICE]}
-            result = await self._async_validate_and_finish(data, errors)
-            if result is not None:
-                return result
+            port = user_input[CONF_DEVICE].strip()
+            if port == entry.data[CONF_DEVICE]:
+                # The running entry holds this port open, so it can't be probed.
+                return self.async_update_reload_and_abort(entry)
+            result = await _async_attempt_connect(port)
+            if isinstance(result, Identity):
+                await self.async_set_unique_id(_unique_id(result))
+                self._abort_if_unique_id_mismatch(reason="wrong_device")
+                return self.async_update_reload_and_abort(entry, data_updates={CONF_DEVICE: port})
+            if result == RESULT_NO_RESPONSE:
+                self._user_input = user_input
+                return await self.async_step_troubleshoot()
+            errors["base"] = result
+
         return self.async_show_form(
-            step_id="usb",
-            data_schema=self.add_suggested_values_to_schema(USB_SCHEMA, user_input or {}),
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(
+                DATA_SCHEMA, user_input or self._user_input or dict(entry.data)
+            ),
             errors=errors,
         )
 
-    async def async_step_network(
+    async def async_step_troubleshoot(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Connect through a network serial bridge such as ser2net on a Raspberry Pi."""
-        errors: dict[str, str] = {}
+        """Explain what to check after the processor did not answer."""
         if user_input is not None:
-            data = {
-                CONF_CONNECTION_TYPE: CONNECTION_NETWORK,
-                CONF_HOST: user_input[CONF_HOST].strip(),
-                CONF_PORT: int(user_input[CONF_PORT]),
-                CONF_PROTOCOL: user_input[CONF_PROTOCOL],
-            }
-            result = await self._async_validate_and_finish(data, errors)
-            if result is not None:
-                return result
-        return self.async_show_form(
-            step_id="network",
-            data_schema=self.add_suggested_values_to_schema(NETWORK_SCHEMA, user_input or {}),
-            errors=errors,
-        )
+            if self.source == SOURCE_RECONFIGURE:
+                return await self.async_step_reconfigure()
+            return await self.async_step_user()
 
-    async def _async_validate_and_finish(
-        self, data: dict[str, Any], errors: dict[str, str]
-    ) -> ConfigFlowResult | None:
-        """Probe the processor; return a result on success or fill ``errors``."""
-        url = build_url(data)
-        if self.source == SOURCE_RECONFIGURE:
-            entry = self._get_reconfigure_entry()
-            if build_url(dict(entry.data)) == url:
-                # The running entry holds this port open, so it can't be probed.
-                return self.async_update_reload_and_abort(entry, data_updates=data)
-        else:
-            # Same reason: an already configured port would fail the probe.
-            self._async_abort_entries_match(
-                {CONF_DEVICE: data[CONF_DEVICE]}
-                if data[CONF_CONNECTION_TYPE] == CONNECTION_USB
-                else {CONF_HOST: data[CONF_HOST], CONF_PORT: data[CONF_PORT]}
-            )
-        try:
-            identity = await async_probe(url)
-        except LumagenConnectionError:
-            errors["base"] = "cannot_connect"
-            return None
-        except LumagenTimeoutError:
-            errors["base"] = "no_response"
-            return None
-        except Exception:
-            LOGGER.exception("Unexpected error probing %s", url)
-            errors["base"] = "unknown"
-            return None
-
-        await self.async_set_unique_id(_unique_id(identity))
-        if self.source == SOURCE_RECONFIGURE:
-            self._abort_if_unique_id_mismatch(reason="wrong_device")
-            return self.async_update_reload_and_abort(
-                self._get_reconfigure_entry(), data_updates=data
-            )
-        self._abort_if_unique_id_configured(updates=data)
-        return self.async_create_entry(title=_title(identity), data=data)
+        return self.async_show_form(step_id="troubleshoot")
 
 
 def _unique_id(identity: Identity) -> str:

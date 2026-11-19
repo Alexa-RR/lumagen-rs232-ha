@@ -11,12 +11,16 @@ Requires Home Assistant 2026.10 or newer.
 ## Connecting the processor
 
 Use a **null-modem** cable from the Radiance's DB9 port to a USB-to-RS-232
-adapter, then pick one of these when adding the integration:
+adapter. When you add the integration, Home Assistant asks for one thing, the
+**serial port**. It works like the built-in *LG TV via Serial* integration:
 
-### USB serial on the Home Assistant host
+- **USB adapter on the Home Assistant host:** pick it from the list.
+- **Network serial bridge:** choose **Enter manually** and type its URL,
+  `socket://<host>:<port>` for raw TCP or `rfc2217://<host>:<port>` for RFC 2217.
 
-Plug the adapter into the Home Assistant machine and choose
-**USB serial adapter** and the port.
+The processor must be on (not in standby) while you add it. If the port opens
+but the Lumagen doesn't answer, a troubleshooting page lists what to check, and
+**Submit** tries again.
 
 ### Network bridge (Raspberry Pi + ser2net)
 
@@ -33,13 +37,17 @@ connection: &lumagen
   connector: serialdev,/dev/serial/by-id/<your-adapter>,9600n81,local
 ```
 
-Then restart ser2net (`sudo systemctl restart ser2net`) and in Home Assistant
-choose **Network serial bridge**, the Pi's address, port `2000` and **Raw TCP**.
+Restart ser2net (`sudo systemctl restart ser2net`), then enter
+`socket://<pi-address>:2000` as the serial port.
 
-For **RFC 2217** instead, use `accepter: telnet(rfc2217),tcp,2000`. Home
-Assistant then sets the port settings itself.
+For **RFC 2217** instead, use `accepter: telnet(rfc2217),tcp,2000` and
+`rfc2217://<pi-address>:2000`. Home Assistant then sets the port settings
+itself.
 
-`kickolduser` lets Home Assistant take the port back after a reconnect.
+`kickolduser` lets Home Assistant take the port back after a reconnect. It also
+means only one client can use the bridge at a time.
+
+To move between USB and the Pi later, use **Reconfigure** on the integration.
 
 ## Radiance settings
 

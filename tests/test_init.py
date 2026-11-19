@@ -17,7 +17,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
-from custom_components.lumagen.const import CONF_CONNECTION_TYPE, CONNECTION_USB, DOMAIN
+from custom_components.lumagen.const import DOMAIN
 
 from .fake_lumagen import I24_NO_SOURCE, FakeLumagen
 
@@ -35,7 +35,7 @@ async def entry(hass: HomeAssistant, fake_lumagen: FakeLumagen) -> MockConfigEnt
         domain=DOMAIN,
         unique_id="1234",
         title="Lumagen RadiancePro",
-        data={CONF_CONNECTION_TYPE: CONNECTION_USB, CONF_DEVICE: "/dev/ttyUSB0"},
+        data={CONF_DEVICE: "/dev/ttyUSB0"},
     )
     config_entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(config_entry.entry_id)
@@ -149,7 +149,7 @@ async def test_setup_retries_when_port_missing(
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id="1234",
-        data={CONF_CONNECTION_TYPE: CONNECTION_USB, CONF_DEVICE: "/dev/ttyUSB0"},
+        data={CONF_DEVICE: "/dev/ttyUSB0"},
     )
     config_entry.add_to_hass(hass)
     await hass.config_entries.async_setup(config_entry.entry_id)
@@ -163,7 +163,7 @@ async def test_setup_retries_when_processor_silent(
     config_entry = MockConfigEntry(
         domain=DOMAIN,
         unique_id="1234",
-        data={CONF_CONNECTION_TYPE: CONNECTION_USB, CONF_DEVICE: "/dev/ttyUSB0"},
+        data={CONF_DEVICE: "/dev/ttyUSB0"},
     )
     config_entry.add_to_hass(hass)
     await hass.config_entries.async_setup(config_entry.entry_id)

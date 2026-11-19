@@ -3,49 +3,32 @@
     "abort": {
       "already_configured": "This processor is already configured",
       "reconfigure_successful": "Connection settings updated",
-      "wrong_device": "That connection reaches a different Lumagen processor than the one being reconfigured"
+      "wrong_device": "That serial port reaches a different Lumagen processor than the one being reconfigured"
     },
     "error": {
-      "cannot_connect": "Could not open the connection. Check the serial port, or the bridge's host and port.",
-      "no_response": "The connection opened but the processor did not answer. Make sure it is powered on, then check the RS-232 cable (null modem), that the bridge runs at 9600 8N1, and that RS-232 Delimiters are Off on the Radiance.",
+      "cannot_connect": "Could not open the serial port. Check the port, or the bridge's address and port number.",
       "unknown": "Unexpected error"
     },
     "step": {
       "user": {
-        "title": "How is the Lumagen connected?",
-        "menu_options": {
-          "usb": "USB serial adapter on this Home Assistant host",
-          "network": "Network serial bridge (e.g. Raspberry Pi running ser2net)"
-        }
-      },
-      "reconfigure": {
-        "title": "How is the Lumagen connected?",
-        "menu_options": {
-          "usb": "USB serial adapter on this Home Assistant host",
-          "network": "Network serial bridge (e.g. Raspberry Pi running ser2net)"
-        }
-      },
-      "usb": {
-        "title": "USB serial adapter",
         "data": {
           "device": "Serial port"
         },
         "data_description": {
-          "device": "The USB-to-RS-232 adapter wired to the Radiance with a null-modem cable"
+          "device": "The serial port wired to the Lumagen with a null-modem cable, or, for a network serial bridge, choose **Enter manually** and type its URL: `socket://192.168.1.20:2000` for a Raspberry Pi running ser2net in raw mode, or `rfc2217://192.168.1.20:2000` in RFC 2217 mode. The processor must be powered on for the initial connection."
         }
       },
-      "network": {
-        "title": "Network serial bridge",
+      "reconfigure": {
         "data": {
-          "host": "Host",
-          "port": "Port",
-          "protocol": "Protocol"
+          "device": "Serial port"
         },
         "data_description": {
-          "host": "Hostname or IP address of the bridge (e.g. the Raspberry Pi)",
-          "port": "TCP port the bridge serves the Lumagen's serial port on",
-          "protocol": "Raw TCP needs 9600 8N1 set in the bridge's config. RFC 2217 lets Home Assistant set the port settings itself."
+          "device": "The serial port wired to the Lumagen with a null-modem cable, or, for a network serial bridge, choose **Enter manually** and type its URL: `socket://192.168.1.20:2000` for a Raspberry Pi running ser2net in raw mode, or `rfc2217://192.168.1.20:2000` in RFC 2217 mode. The processor must be powered on for the initial connection."
         }
+      },
+      "troubleshoot": {
+        "title": "Connection failed",
+        "description": "Home Assistant opened the serial port, but the Lumagen did not answer.\n\nMake sure that:\n- The processor is powered on, not in standby.\n- The cable is a null-modem (cross-over) cable and is fully seated in the Lumagen's RS-232 port.\n- The correct serial port was selected.\n- RS-232 **Delimiters** are **Off** on the Lumagen (MENU → Other → I/O Setup → RS-232 Setup).\n- For a network bridge, the bridge runs at **9600 8N1** with no flow control, and nothing else is connected to it.\n\nSelect **Submit** to try again."
       }
     }
   },
@@ -58,14 +41,6 @@
         "data_description": {
           "input_count": "How many inputs to offer in the input selector"
         }
-      }
-    }
-  },
-  "selector": {
-    "protocol": {
-      "options": {
-        "socket": "Raw TCP (ser2net raw mode)",
-        "rfc2217": "RFC 2217 (ser2net telnet/rfc2217 mode)"
       }
     }
   },

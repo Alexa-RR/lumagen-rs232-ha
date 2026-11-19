@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-from homeassistant.const import Platform
+from homeassistant.const import CONF_DEVICE, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
-from .const import build_url
 from .coordinator import LumagenConfigEntry, LumagenCoordinator
 from .pylumagen import LumagenClient, LumagenConnectionError
 
@@ -21,7 +20,7 @@ PLATFORMS = [
 
 async def async_setup_entry(hass: HomeAssistant, entry: LumagenConfigEntry) -> bool:
     """Set up a Lumagen processor from a config entry."""
-    client = LumagenClient(build_url(dict(entry.data)))
+    client = LumagenClient(entry.data[CONF_DEVICE])
     try:
         await client.connect()
     except LumagenConnectionError as err:
