@@ -85,7 +85,7 @@ which is sent exactly as given (include `\r` where Tech Tip 11 shows `<CR>`):
 `auto_aspect_on`, `auto_aspect_off`, `hdr_setup`, `test_pattern`, `memory_a`-`memory_d`,
 `pip_off`, `pip_select`, `pip_swap`, `pip_mode`, and the source aspects
 `aspect_4_3`, `aspect_letterbox`, `aspect_16_9`, `aspect_1_85`, `aspect_1_90`,
-`aspect_2_00`, `aspect_2_20`, `aspect_2_35`, `aspect_2_40` (with `_nz` / `_nls`
+`aspect_2_00`, `aspect_2_20`, `aspect_2_35`, `aspect_2_40` (with `_nz`, `_nls` and `_nz_nls`
 variants where the Radiance has them) and the extended aspects
 `aspect_4_3_pillarbox`, `aspect_1_375_pillarbox`, `aspect_1_66_pillarbox`,
 `aspect_2_10`, `aspect_2_55`, `aspect_2_76`.
