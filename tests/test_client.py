@@ -44,7 +44,7 @@ async def test_refresh_reads_everything(fake_lumagen: FakeLumagen) -> None:
 
 
 async def test_falls_back_to_older_full_info_query(fake_lumagen: FakeLumagen) -> None:
-    fake_lumagen.silent = {"ZQI24", "ZQI23"}
+    fake_lumagen.silent = {"ZQI25", "ZQI24", "ZQI23"}
     fake_lumagen.full_info = "I22,1,059,1080,0,1,178,178,-,0,0003,0,0,060,2160,178,1,0,p,P"
 
     def answer_i22(query: str, original=fake_lumagen._answer) -> None:
@@ -60,9 +60,10 @@ async def test_falls_back_to_older_full_info_query(fake_lumagen: FakeLumagen) ->
         await client.refresh()
         assert client.state.full_info is not None
         assert client.state.full_info.source_frame_rate == 59.94
-        # The working query is remembered, so the next refresh skips I24/I23.
+        # The working query is remembered, so the next refresh skips I25-I23.
         fake_lumagen.received = ""
         await client.refresh()
+        assert "ZQI25" not in fake_lumagen.received
         assert "ZQI24" not in fake_lumagen.received
         assert "ZQI22" in fake_lumagen.received
     finally:

@@ -19,7 +19,7 @@ QUERY_INPUT_INFO = "ZQI00"
 QUERY_SOURCE_ASPECT = "ZQI20"
 QUERY_GAME_MODE = "ZQI53"
 # Newest first; the client uses the first one the firmware answers.
-QUERY_FULL_INFO = ("ZQI24", "ZQI23", "ZQI22", "ZQI21")
+QUERY_FULL_INFO = ("ZQI25", "ZQI24", "ZQI23", "ZQI22", "ZQI21")
 
 MEMORIES = ("A", "B", "C", "D")
 MAX_INPUTS = 19

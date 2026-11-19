@@ -40,8 +40,12 @@ class LumagenEntity(CoordinatorEntity[LumagenCoordinator]):
 
     @property
     def available(self) -> bool:
-        """Return True when connected (and powered on, if required)."""
-        if not super().available or not self.coordinator.client.connected:
+        """Return True while the processor is reachable (and on, if required).
+
+        Short silences and reconnects are absorbed by the coordinator's grace
+        period, so only a sustained outage makes entities unavailable.
+        """
+        if not super().available:
             return False
         return not self._requires_power or bool(self.coordinator.data.power)
 

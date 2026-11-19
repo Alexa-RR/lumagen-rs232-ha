@@ -140,9 +140,16 @@ class FakeLumagen:
                 "ZQI00": f"I00,{self.input},{self.memory},{self.input}",
                 "ZQI53": f"I53,{int(self.game_mode)}",
                 "ZQI24": self.full_info,
+                "ZQI25": self._full_info_v5(),
             }.get(query)
         if reply is not None:
             self._send(f"!{reply}\r\n")
+
+    def _full_info_v5(self) -> str | None:
+        """ZQI25 = the ZQI24 fields plus memory, unknown, sub shift, auto aspect."""
+        if not self.full_info.startswith("I24,"):
+            return None
+        return f"I25,{self.full_info[4:]},{self.memory},0,0,2"
 
     def _answer_label(self, memory: str, number: int) -> None:
         label = self.labels.get((memory, number), f"Input {number}{memory}")

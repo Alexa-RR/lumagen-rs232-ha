@@ -96,6 +96,33 @@ def test_full_info_v4() -> None:
     assert info.detected_content_aspect == 240
 
 
+def test_full_info_v5_from_radiance_pro() -> None:
+    # A real ZQI25 reply shape (1080p59.94 SDR on input 1, memory A).
+    info = FullInfo.from_message(
+        parse_line(
+            "!I25,1,059,1080,0,0,178,178,-,0,000E,0,0,059,2160,185,2,0,p,P,1,01,178,178,A,0,0,2"
+        )
+    )
+    assert info.source_frame_rate == 59.94
+    assert info.source_resolution == "1080p"
+    assert info.output_resolution == "2160p"
+    assert info.outputs_on == 0x0E
+    assert info.physical_input == 1
+    assert info.input_memory == "A"
+    assert (info.sub_shift, info.auto_aspect) == (0, 2)
+
+
+def test_state_takes_memory_from_full_info() -> None:
+    state = LumagenState()
+    state.apply(parse_line("!I00,1,A,1"))
+    state.apply(
+        parse_line(
+            "!I25,1,059,1080,0,0,178,178,-,0,000E,0,0,059,2160,185,2,0,p,P,1,01,178,178,C,0,0,2"
+        )
+    )
+    assert state.current_memory == "C"
+
+
 def test_full_info_tolerates_future_fields() -> None:
     info = FullInfo.from_message(parse_line("!" + I24_4K_HDR + ",X,Y,Z"))
     assert info.detected_content_aspect == 240

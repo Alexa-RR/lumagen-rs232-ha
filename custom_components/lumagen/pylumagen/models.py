@@ -91,9 +91,10 @@ class InputInfo:
         return cls(_int(fields[0]), memory or None, _int(fields[2]))
 
 
-# Field order of ZQI22/23/24. Later firmware may append more fields, so
+# Field order of ZQI22-25. Later firmware may append more fields, so
 # parsing must tolerate (and ignore) anything after the last known one.
-_FULL_INFO_FIELDS = (
+# ``None`` marks a field whose meaning is not known yet.
+_FULL_INFO_FIELDS: tuple[str | None, ...] = (
     "input_status",  # M
     "source_vertical_rate",  # RRR
     "source_vertical_resolution",  # VVVV
@@ -117,6 +118,13 @@ _FULL_INFO_FIELDS = (
     "physical_input",  # KK (I23+)
     "detected_raster_aspect",  # JJJ (I24+)
     "detected_content_aspect",  # LLL (I24+)
+    # ZQI25 is newer than Tech Tip 11 (2023). Its extra fields as seen on a
+    # Radiance Pro: memory "A", then an unknown field, sub shift "0" and
+    # auto aspect "1"/"2".
+    "input_memory",  # I25+
+    None,
+    "sub_shift",  # I25+
+    "auto_aspect",  # I25+
 )
 
 # ZQI21's documented format string omits T and WWWW even though its field list
@@ -128,7 +136,7 @@ _FULL_INFO_V1_SHORT = tuple(
 
 @dataclass(frozen=True, slots=True)
 class FullInfo:
-    """Reply to ``ZQI21``-``ZQI24`` (also sent unsolicited in "Full" report modes)."""
+    """Reply to ``ZQI21``-``ZQI25`` (also sent unsolicited in "Full" report modes)."""
 
     input_status: InputStatus | None = None
     source_vertical_rate: int | None = None
@@ -153,19 +161,26 @@ class FullInfo:
     physical_input: int | None = None
     detected_raster_aspect: int | None = None
     detected_content_aspect: int | None = None
+    input_memory: str | None = None
+    sub_shift: int | None = None
+    auto_aspect: int | None = None
 
     @classmethod
     def from_message(cls, message: Message) -> FullInfo:
-        """Parse any of the ``!I21`` .. ``!I24`` replies."""
+        """Parse any of the ``!I21`` .. ``!I25`` replies."""
         fields = [f.strip() for f in message.fields]
         if message.code == "I21" and len(fields) < 15:
-            names: tuple[str, ...] = _FULL_INFO_V1_SHORT
+            names: tuple[str | None, ...] = _FULL_INFO_V1_SHORT
         else:
             names = _FULL_INFO_FIELDS
-        raw = dict(zip(names, fields, strict=False))
         values: dict[str, object] = {}
-        for name, value in raw.items():
-            if name == "nls_active":
+        for name, value in zip(names, fields, strict=False):
+            if name is None:
+                continue
+            if name == "input_memory":
+                memory = value.upper()
+                values[name] = memory if memory in ("A", "B", "C", "D") else None
+            elif name == "nls_active":
                 values[name] = value.upper() == "N"
             elif name == "outputs_on":
                 values[name] = _int(value, 16)
@@ -257,6 +272,8 @@ class LumagenState:
     @property
     def current_memory(self) -> str | None:
         """The active input memory, ``A``-``D``."""
+        if self.full_info is not None and self.full_info.input_memory:
+            return self.full_info.input_memory
         return self.input_info.memory if self.input_info is not None else None
 
     def input_label(self, number: int, memory: str | None = None) -> str | None:
@@ -275,7 +292,7 @@ class LumagenState:
                 self.source_aspect = None
         elif code == "S01":
             self.identity = Identity.from_message(message)
-        elif code in ("I21", "I22", "I23", "I24"):
+        elif code in ("I21", "I22", "I23", "I24", "I25"):
             self.full_info = FullInfo.from_message(message)
             # Only an awake unit reports video status.
             self.power = True

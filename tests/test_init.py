@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 
 import pytest
+from freezegun.api import FrozenDateTimeFactory
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import (
     ATTR_ENTITY_ID,
@@ -18,6 +19,7 @@ from homeassistant.util import dt as dt_util
 from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
 from custom_components.lumagen.const import DOMAIN
+from custom_components.lumagen.coordinator import UNAVAILABLE_AFTER
 
 from .fake_lumagen import I24_NO_SOURCE, FakeLumagen
 
@@ -126,11 +128,34 @@ async def test_unsolicited_report_updates_entities(
     assert _state(hass, "binary_sensor.lumagen_radiancepro_video_signal") == STATE_OFF
 
 
-async def test_connection_loss_and_recovery(
+async def test_short_connection_drop_stays_available(
     hass: HomeAssistant, entry: MockConfigEntry, fake_lumagen: FakeLumagen
+) -> None:
+    # e.g. ser2net handing the port to another client for a moment
+    fake_lumagen.drop_connection()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert _state(hass, REMOTE) == STATE_ON
+    for _ in range(20):
+        await hass.async_block_till_done(wait_background_tasks=True)
+        if entry.runtime_data.client.connected:
+            break
+    assert entry.runtime_data.client.connected
+    assert _state(hass, REMOTE) == STATE_ON
+
+
+async def test_connection_loss_and_recovery(
+    hass: HomeAssistant,
+    entry: MockConfigEntry,
+    fake_lumagen: FakeLumagen,
+    freezer: FrozenDateTimeFactory,
 ) -> None:
     fake_lumagen.refuse_connections = True
     fake_lumagen.drop_connection()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert _state(hass, REMOTE) == STATE_ON  # within the grace period
+
+    freezer.tick(UNAVAILABLE_AFTER + timedelta(seconds=1))
+    async_fire_time_changed(hass)
     await hass.async_block_till_done(wait_background_tasks=True)
     assert _state(hass, REMOTE) == STATE_UNAVAILABLE
 
@@ -139,6 +164,27 @@ async def test_connection_loss_and_recovery(
         await hass.async_block_till_done(wait_background_tasks=True)
         if _state(hass, REMOTE) == STATE_ON:
             break
+    assert _state(hass, REMOTE) == STATE_ON
+
+
+async def test_silent_while_booting_stays_available(
+    hass: HomeAssistant, entry: MockConfigEntry, fake_lumagen: FakeLumagen
+) -> None:
+    coordinator = entry.runtime_data
+    coordinator.client._query_timeout = 0.05
+    # The Radiance ignores queries for a while after power-on.
+    fake_lumagen.silent = {"ZQS02"}
+    await _poll(hass)
+    assert _state(hass, REMOTE) == STATE_ON
+    assert _state(hass, SOURCE_RES) == "2160p"
+
+    # Still silent once the grace period has passed: now it is unavailable.
+    coordinator._last_contact -= UNAVAILABLE_AFTER
+    await _poll(hass)
+    assert _state(hass, REMOTE) == STATE_UNAVAILABLE
+
+    fake_lumagen.silent = set()
+    await _poll(hass)
     assert _state(hass, REMOTE) == STATE_ON
 
 
