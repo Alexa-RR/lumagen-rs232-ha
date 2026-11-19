@@ -1,0 +1,89 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "signal": {
+        "default": "mdi:video-off-outline",
+        "state": {
+          "on": "mdi:video-outline"
+        }
+      },
+      "hdr": {
+        "default": "mdi:hdr-off",
+        "state": {
+          "on": "mdi:hdr"
+        }
+      }
+    },
+    "select": {
+      "input": {
+        "default": "mdi:video-input-hdmi"
+      },
+      "memory": {
+        "default": "mdi:alpha-m-box-outline",
+        "state": {
+          "a": "mdi:alpha-a-box-outline",
+          "b": "mdi:alpha-b-box-outline",
+          "c": "mdi:alpha-c-box-outline",
+          "d": "mdi:alpha-d-box-outline"
+        }
+      }
+    },
+    "sensor": {
+      "input_status": {
+        "default": "mdi:video-input-component",
+        "state": {
+          "no_source": "mdi:video-off-outline",
+          "active_video": "mdi:play-box-outline",
+          "test_pattern": "mdi:checkerboard"
+        }
+      },
+      "source_resolution": {
+        "default": "mdi:video-high-definition"
+      },
+      "source_frame_rate": {
+        "default": "mdi:filmstrip"
+      },
+      "source_content_aspect": {
+        "default": "mdi:aspect-ratio"
+      },
+      "source_raster_aspect": {
+        "default": "mdi:aspect-ratio"
+      },
+      "detected_content_aspect": {
+        "default": "mdi:crop"
+      },
+      "output_resolution": {
+        "default": "mdi:projector-screen"
+      },
+      "output_frame_rate": {
+        "default": "mdi:filmstrip-box"
+      },
+      "output_aspect": {
+        "default": "mdi:arrow-expand-horizontal"
+      },
+      "output_colorspace": {
+        "default": "mdi:palette"
+      },
+      "output_cms": {
+        "default": "mdi:tune-variant"
+      },
+      "output_style": {
+        "default": "mdi:palette-swatch"
+      },
+      "input_config": {
+        "default": "mdi:cog-outline"
+      },
+      "physical_input": {
+        "default": "mdi:hdmi-port"
+      }
+    },
+    "switch": {
+      "game_mode": {
+        "default": "mdi:controller-off",
+        "state": {
+          "on": "mdi:controller"
+        }
+      }
+    }
+  }
+}
