@@ -111,6 +111,10 @@ class FakeLumagen:
                 command, _, self._buffer = buf.partition("\r")
                 if command.startswith("ZY551"):
                     self.game_mode = command[5:] == "1"
+                elif command.startswith("ZY524"):
+                    target, number, label = command[5], int(command[6]) + 1, command[7:]
+                    for memory in "ABCD" if target == "0" else target:
+                        self.labels[(memory, number)] = label
             elif buf[0] == "i":
                 if len(buf) < 2 or (buf[1] == "+" and len(buf) < 3):
                     return

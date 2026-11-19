@@ -84,6 +84,11 @@
           "on": "mdi:controller"
         }
       }
+    },
+    "text": {
+      "input_label": {
+        "default": "mdi:rename-outline"
+      }
     }
   }
 }

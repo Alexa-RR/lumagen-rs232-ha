@@ -72,6 +72,11 @@ Optional but recommended:
 | Video signal, HDR (binary sensors) | From the full-status report |
 | Sensors | Source/output resolution, frame rate, aspect, colorspace, CMS, style, and more |
 
+Each input also gets an **Input N name** entity (Configuration section, inputs
+1-10). Editing it renames the input on the Radiance: up to 10 characters from
+space to `z`, set in all four memories, then saved to flash (the same as doing
+a Save in the menu, so any other unsaved menu changes are saved too).
+
 Video entities are unavailable while the processor is in standby. Set the
 number of inputs in the integration's options (default 8).
 

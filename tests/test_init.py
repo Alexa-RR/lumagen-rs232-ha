@@ -100,6 +100,31 @@ async def test_commands(
     assert _state(hass, GAME_MODE) == STATE_ON
 
 
+async def test_rename_input(
+    hass: HomeAssistant, entry: MockConfigEntry, fake_lumagen: FakeLumagen
+) -> None:
+    name = "text.lumagen_radiancepro_input_1_name"
+    assert _state(hass, name) == "Apple TV"
+    fake_lumagen.received = ""
+    await hass.services.async_call(
+        "text", "set_value", {ATTR_ENTITY_ID: name, "value": "Shield"}, blocking=True
+    )
+    assert "ZY52400Shield\r" in fake_lumagen.received
+    assert "ZY6SAVECONFIG\r" in fake_lumagen.received
+    assert fake_lumagen.labels[("C", 1)] == "Shield"
+    assert _state(hass, name) == "Shield"
+    # A label longer than 10 characters is cut rather than breaking the entity.
+    assert _state(hass, "text.lumagen_radiancepro_input_3_name") == "Kaleidesca"
+    assert _state(hass, INPUT) == "3: Kaleidescape"
+    assert hass.states.get(INPUT).attributes["options"][0] == "1: Shield"
+
+    # The processor would end the command early on '{', so it is refused.
+    with pytest.raises(ValueError):
+        await hass.services.async_call(
+            "text", "set_value", {ATTR_ENTITY_ID: name, "value": "a{b"}, blocking=True
+        )
+
+
 async def test_standby_and_wake(
     hass: HomeAssistant, entry: MockConfigEntry, fake_lumagen: FakeLumagen
 ) -> None:

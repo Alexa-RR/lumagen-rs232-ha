@@ -260,6 +260,16 @@ class LumagenClient:
                 self.state.labels[f"{memory.upper()}{number}"] = label
         return labels
 
+    async def set_input_label(
+        self, number: int, label: str, memory: str | None = None, *, save: bool = True
+    ) -> None:
+        """Name input 1-10 in one memory (or all four), then save to flash."""
+        await self.send(commands.set_input_label(number, label, memory))
+        if save:
+            await self.send(commands.SAVE_CONFIG)
+        for mem in [memory.upper()] if memory is not None else commands.MEMORIES:
+            self.state.labels[f"{mem.upper()}{number}"] = label
+
     async def power_on(self) -> None:
         """Wake the processor (state is updated optimistically)."""
         await self.send(commands.POWER_ON)

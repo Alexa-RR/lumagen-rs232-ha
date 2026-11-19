@@ -126,6 +126,11 @@
       "game_mode": {
         "name": "Game mode"
       }
+    },
+    "text": {
+      "input_label": {
+        "name": "Input {number} name"
+      }
     }
   }
 }

@@ -180,3 +180,16 @@ def test_commands() -> None:
     assert commands.query_input_label("b", 6) == "ZQS1B5"
     assert commands.show_message("Hi{there}", 9) == "ZT9Hi there \r"
     assert len(commands.show_message("x" * 100)) == 2 + 1 + 60 + 1
+
+
+def test_set_input_label() -> None:
+    # Tech Tip 11's own example.
+    assert commands.set_input_label(2, "Roku 2A", "a") == "ZY524A1Roku 2A\r"
+    # No memory = all four.
+    assert commands.set_input_label(1, "Shield") == "ZY52400Shield\r"
+    assert commands.set_input_label(10, "x") == "ZY52409x\r"
+    for bad in ("", "x" * 11, "Café", "a{b", "tab\t"):
+        with pytest.raises(ValueError):
+            commands.set_input_label(1, bad)
+    with pytest.raises(ValueError):
+        commands.set_input_label(11, "PC")

@@ -119,6 +119,30 @@ def query_input_label(memory: str, number: int) -> str:
     return f"ZQS1{select_memory(memory).upper()}{number - 1}"
 
 
+LABEL_MAX_LENGTH = 10
+SAVE_CONFIG = "ZY6SAVECONFIG\r"
+
+
+def is_valid_label(label: str) -> bool:
+    """Return True for 1-10 characters in the processor's legal range (0x20-0x7A)."""
+    return 1 <= len(label) <= LABEL_MAX_LENGTH and all(0x20 <= ord(c) <= 0x7A for c in label)
+
+
+def set_input_label(number: int, label: str, memory: str | None = None) -> str:
+    """Return the command that names input 1-10 in one memory, or all four when ``memory`` is None.
+
+    Anything outside 0x20-0x7A would end the command early, so it is refused.
+    """
+    if not 1 <= number <= MAX_LABELED_INPUTS:
+        raise ValueError(f"Labels can only be set for inputs 1-{MAX_LABELED_INPUTS}")
+    if not is_valid_label(label):
+        raise ValueError(
+            f"A label is 1-{LABEL_MAX_LENGTH} characters from space to 'z', got {label!r}"
+        )
+    target = select_memory(memory).upper() if memory is not None else "0"
+    return f"ZY524{target}{number - 1}{label}\r"
+
+
 def show_message(text: str, seconds: int = 3) -> str:
     """Return the command to show an on-screen message.
 
